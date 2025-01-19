@@ -91,69 +91,95 @@ async def check_payment_handler(callback: types.CallbackQuery):
         else:
             await callback.answer("⚠ Оплата не найдена. Попробуйте позже.")
 
+
+
+
 # Выдача конфигурационного файла
 @router.callback_query(lambda c: c.data == "get_config")
 async def get_config_handler(callback: types.CallbackQuery):
     user_id = callback.from_user.id
 
-    async with db.pool.acquire() as connection:
-        config = await connection.fetchrow(
-            "SELECT * FROM configs WHERE is_available = TRUE LIMIT 1"
-        )
+    async with db.pool.acquire() as conn:
+        # Получаем свободный конфиг
+        config = await conn.fetchrow("SELECT * FROM configs WHERE is_available = TRUE LIMIT 1")
 
         if not config:
-            await callback.message.edit_text(
-                "❌ Свободных конфигов нет. Обратитесь к администратору.",
-                reply_markup=InlineKeyboardMarkup(
-                    inline_keyboard=[
-                        [InlineKeyboardButton(text="📍 Меню", callback_data="back_to_menu")]
-                    ]
-                )
-            )
+            await callback.message.answer("❌ Нет доступных конфигов. Обратитесь к администратору.")
             return
 
-        file_path = config["file_path"]
-        file_name = config["file_name"]
+        # Привязываем конфиг к пользователю
+        await conn.execute("UPDATE configs SET is_available = FALSE, user_id = $1 WHERE id = $2", user_id, config["id"])
 
-        # Отправляем конфиг пользователю
-        file = FSInputFile(file_path, filename=file_name)
-        await callback.message.answer_document(file, caption="🎉 Ваш конфиг готов!")
+        # Создаём подписку
+        await conn.execute("""
+            INSERT INTO subscriptions (user_id, plan, start_date, end_date, status, config_id)
+            VALUES ($1, '1m', NOW(), NOW() + INTERVAL '1 month', 'active', $2)
+        """, user_id, config["id"])
 
-        # Отмечаем конфиг как занятый
-        await connection.execute(
-            "UPDATE configs SET is_available = FALSE WHERE id = $1", config["id"]
-        )
+        # Отправляем конфиг
+        file = FSInputFile(config["file_path"], filename=config["file_name"])
+        await callback.message.answer_document(file, caption="✅ Ваш конфиг готов!")
 
     await callback.answer()
+
+
+
+
+
+
 
 # Продление подписки
 @router.callback_query(lambda c: c.data == "extend_subscription")
 async def extend_subscription_handler(callback: types.CallbackQuery):
     user_id = callback.from_user.id
 
-    async with db.pool.acquire() as connection:
-        subscription = await connection.fetchrow(
-            "SELECT * FROM subscriptions WHERE user_id = $1 AND status = 'active'", user_id
-        )
+    async with db.pool.acquire() as conn:
+        subs = await conn.fetch("""
+            SELECT id, plan, end_date, 
+                   (SELECT file_name FROM configs WHERE configs.id = subscriptions.config_id) AS file_name
+            FROM subscriptions WHERE user_id = $1 AND status = 'active'
+        """, user_id)
 
-        if not subscription:
-            await callback.answer("❌ У вас нет активной подписки.")
+        if not subs:
+            await callback.message.answer("❌ У вас нет активных подписок.")
             return
 
-        # Определяем новый срок подписки
-        plan_durations = {"1m": "1 month", "3m": "3 months", "6m": "6 months"}
-        plan = subscription["plan"]
-        if plan not in plan_durations:
-            await callback.answer("⚠ Ошибка: неподдерживаемый план подписки.")
+        if len(subs) > 1:
+            keyboard = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text=sub["file_name"], callback_data=f"renew_{sub['id']}")]
+                    for sub in subs
+                ]
+            )
+            await callback.message.edit_text("Выберите подписку для продления:", reply_markup=keyboard)
             return
 
-        new_end_date = subscription["end_date"] + plan_durations[plan]
+        sub = subs[0]
+        await renew_subscription(callback, sub["id"])
 
-        # Обновляем дату окончания подписки
-        await connection.execute(
-            "UPDATE subscriptions SET end_date = $1 WHERE user_id = $2",
-            new_end_date, user_id
-        )
 
-        await callback.message.edit_text("✅ Подписка продлена!")
-    await callback.answer()
+@router.callback_query(lambda c: c.data.startswith("renew_"))
+async def renew_subscription(callback: types.CallbackQuery, subscription_id: int = None):
+    """Продлевает подписку пользователя"""
+    if subscription_id is None:
+        subscription_id = int(callback.data.split("_")[1])
+
+    async with db.pool.acquire() as conn:
+        sub = await conn.fetchrow("SELECT * FROM subscriptions WHERE id = $1", subscription_id)
+
+        if not sub:
+            await callback.message.answer("❌ Подписка не найдена.")
+            return
+
+        # Определяем новую дату окончания подписки
+        extension_map = {"1m": "1 month", "3m": "3 months", "6m": "6 months"}
+        extension = extension_map.get(sub["plan"], "1 month")
+
+        await conn.execute(f"""
+            UPDATE subscriptions 
+            SET end_date = end_date + INTERVAL '{extension}' 
+            WHERE id = $1
+        """, subscription_id)
+
+        await callback.message.edit_text("✅ Подписка успешно продлена!")
+        await callback.answer()

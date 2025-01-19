@@ -10,13 +10,13 @@ class Database:
         self.pool = await asyncpg.create_pool(DB_URL, min_size=1, max_size=10)
 
     async def close(self):
-        """Закрывает пул подключений"""
+        """Закрывает соединение с БД"""
         await self.pool.close()
 
     async def create_tables(self):
-        """Создает таблицы в базе данных"""
-        async with self.pool.acquire() as connection:
-            await connection.execute("""
+        """Создает таблицы, если их нет"""
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     id SERIAL PRIMARY KEY,
                     tg_id BIGINT UNIQUE NOT NULL,
@@ -30,7 +30,8 @@ class Database:
                     plan TEXT NOT NULL,
                     start_date TIMESTAMP DEFAULT NOW(),
                     end_date TIMESTAMP,
-                    status TEXT DEFAULT 'active'
+                    status TEXT DEFAULT 'active',
+                    config_id INTEGER REFERENCES configs(id) ON DELETE SET NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS payments (
@@ -39,23 +40,16 @@ class Database:
                     payment_id TEXT UNIQUE NOT NULL,
                     amount INTEGER NOT NULL,
                     status TEXT DEFAULT 'pending',
-                    payment_link TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                CREATE TABLE IF NOT EXISTS files (
-                    id SERIAL PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    path TEXT NOT NULL,
-                    access_level TEXT NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS configs (
                     id SERIAL PRIMARY KEY,
                     file_name TEXT NOT NULL,
                     file_path TEXT NOT NULL,
+                    user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
                     is_available BOOLEAN DEFAULT TRUE
                 );
             """)
 
-db = Database()  # Создаём объект базы данных
+db = Database()
