@@ -15,7 +15,7 @@ dp = Dispatcher()
 
 async def main():
     await db.connect()  # Подключение к БД
-    await db.create_tables()  # Создание таблиц
+    #await db.create_tables()  # Создание таблиц
     register_handlers(dp)  # Регистрация обработчиков
     await dp.start_polling(bot)  # Запуск бота
 

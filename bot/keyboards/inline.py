@@ -37,8 +37,8 @@ def instruction_keyboard():
             [InlineKeyboardButton(text="iOS", callback_data="instruction_ios")],
             [InlineKeyboardButton(text="Android", callback_data="instruction_android")],
             [InlineKeyboardButton(text="Windows", callback_data="instruction_windows")],
-            [InlineKeyboardButton(text="Linux", callback_data="instruction_linux")],
             [InlineKeyboardButton(text="MacOS", callback_data="instruction_macos")],
+            [InlineKeyboardButton(text="Android TV", callback_data="instruction_tv")],
             [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_menu")],
         ]
     )
