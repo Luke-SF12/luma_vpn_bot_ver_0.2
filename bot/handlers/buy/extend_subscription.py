@@ -12,7 +12,7 @@ async def extend_subscription_handler(callback: types.CallbackQuery):
 
     async with db.pool.acquire() as conn:
         subscriptions = await conn.fetch("""
-            SELECT s.id, s.end_date, c.file_name
+            SELECT s.id, s.end_date, c.name
             FROM subscriptions s
             LEFT JOIN configs c ON s.config_id = c.id
             WHERE s.user_id = $1 AND s.status = 'active'

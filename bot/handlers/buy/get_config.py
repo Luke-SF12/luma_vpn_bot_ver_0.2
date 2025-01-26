@@ -1,6 +1,5 @@
 import logging
 from aiogram import Router, types
-from aiogram.types import FSInputFile
 from bot.keyboards.inline import inline_menu
 from database.db import db
 
@@ -33,7 +32,7 @@ async def get_config_handler(callback: types.CallbackQuery):
             """)
 
             if not config:
-                await send_error_message(callback, "❌ Нет свободных конфигов!")
+                await send_error_message(callback, "❌ Нет свободных ключей!")
                 return
 
             # Обновляем конфиг и создаем подписку
@@ -48,13 +47,24 @@ async def get_config_handler(callback: types.CallbackQuery):
             """, user_id, duration, config["id"])
 
             # Логирование
-            logging.info(f"Файл {config['file_name']} выдан пользователю {user_id}.")
+            logging.info(f"Ключ {config['name']} выдан пользователю {user_id}.")
 
-            # Отправка файла
-            file = FSInputFile(config["file_path"], filename=config["file_name"])
+            # Удаляем предыдущее сообщение с кнопками
             await callback.message.delete()
-            await callback.message.answer_document(file, caption="✅ Ваш конфиг готов!")
-            await callback.message.answer("📌 Выберите раздел:", reply_markup=inline_menu())
+
+            # Отправляем ключ
+            await callback.message.answer(
+                f"✅ Ваш ключ готов!\n\n"
+                f"🔑 Название: {config['name']}\n"
+                f"Ключ: <code>{config['config_key']}</code>\n\n"
+                f"Используйте его для настройки VPN."
+            )
+
+            # Отправляем главное меню
+            await callback.message.answer(
+                "📌 Выберите нужный раздел:",
+                reply_markup=inline_menu()
+            )
 
     await callback.answer()
 

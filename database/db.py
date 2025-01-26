@@ -11,6 +11,44 @@ class Database:
     async def close(self):
         await self.pool.close()
 
+    async def add_key(self, name: str, key: str):
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "INSERT INTO configs(name, config_key) VALUES($1, $2)",
+                name, key
+            )
+
+    async def get_inactive_keys_with_subscriptions(self):
+        async with self.pool.acquire() as conn:
+            return await conn.fetch("""
+                SELECT c.id, c.name 
+                FROM configs c
+                JOIN subscriptions s ON c.id = s.config_id
+                WHERE s.status = 'inactive'
+            """)
+
+    async def delete_key_and_subscriptions(self, key_id: int):
+        async with self.pool.acquire() as conn:
+            # Удаляем подписки, связанные с этим ключом
+            await conn.execute("DELETE FROM subscriptions WHERE config_id = $1", key_id)
+            # Удаляем сам ключ
+            await conn.execute("DELETE FROM configs WHERE id = $1", key_id)
+
+    async def get_stats(self):
+        async with self.pool.acquire() as conn:
+            users_with_sub = await conn.fetchval("SELECT COUNT(*) FROM subscriptions WHERE status = 'active'")
+            free_keys = await conn.fetchval("SELECT COUNT(*) FROM configs WHERE is_available = TRUE")
+            used_keys = await conn.fetchval("SELECT COUNT(*) FROM configs WHERE is_available = FALSE")
+            return users_with_sub, free_keys, used_keys
+
+    async def get_detailed_stats(self):
+        async with self.pool.acquire() as conn:
+            active_subs = await conn.fetchval("SELECT COUNT(*) FROM subscriptions WHERE status = 'active'")
+            expired_subs = await conn.fetchval("SELECT COUNT(*) FROM subscriptions WHERE status = 'inactive'")
+            total_users = await conn.fetchval("SELECT COUNT(*) FROM users")
+            return active_subs, expired_subs, total_users
+
+
     async def create_tables(self):
         async with self.pool.acquire() as conn:
             await conn.execute("""
@@ -40,11 +78,11 @@ class Database:
                 );
 
                 CREATE TABLE IF NOT EXISTS configs (
-                    id SERIAL PRIMARY KEY,
-                    file_name TEXT NOT NULL,
-                    file_path TEXT NOT NULL,
-                    user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
-                    is_available BOOLEAN DEFAULT TRUE
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,  -- Название ключа
+                config_key TEXT NOT NULL,  -- Сам ключ
+                user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
+                is_available BOOLEAN DEFAULT TRUE
                 );
             """)
 

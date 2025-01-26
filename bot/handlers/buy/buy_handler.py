@@ -26,7 +26,7 @@ async def show_subscriptions(callback: types.CallbackQuery):
         """)
 
         if not available_configs:
-            await callback.answer("❌ Свободных файлов нет. Обратитесь к администратору.", show_alert=True)
+            await callback.answer("❌ Свободных ключей нет. Обратитесь к администратору.", show_alert=True)
             return
 
     await callback.message.edit_text("Выберите тариф для покупки:", reply_markup=subscription_keyboard())

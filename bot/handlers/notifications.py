@@ -35,7 +35,7 @@ async def check_expiring_subscriptions(bot: Bot):
     async with db.pool.acquire() as conn:
         # Получаем подписки, которые заканчиваются завтра (любое время)
         subscriptions = await conn.fetch("""
-            SELECT s.user_id, s.end_date, c.file_name
+            SELECT s.user_id, s.end_date, c.name
             FROM subscriptions s
             LEFT JOIN configs c ON s.config_id = c.id
             WHERE s.status = 'active'
@@ -45,12 +45,11 @@ async def check_expiring_subscriptions(bot: Bot):
         # Отправляем уведомления
         for sub in subscriptions:
             user_id = sub['user_id']
-            file_name = sub['file_name']
+            config_name = sub['name']
             await send_notification(
                 bot,
                 user_id,
-                f"⚠️ Ваша подписка на файл <b>{file_name}</b> заканчивается завтра!\n"
-                "Не забудьте продлить её вовремя."
+                f"⚠️ Ваша подписка на ключ <b>{config_name}</b> заканчивается завтра!\n"
             )
 
 async def check_expired_subscriptions(bot: Bot):
@@ -58,7 +57,7 @@ async def check_expired_subscriptions(bot: Bot):
     async with db.pool.acquire() as conn:
         # Получаем подписки, которые истекли
         expired_subscriptions = await conn.fetch("""
-            SELECT s.user_id, c.file_name
+            SELECT s.user_id, c.name
             FROM subscriptions s
             LEFT JOIN configs c ON s.config_id = c.id
             WHERE s.end_date < NOW() AND s.status = 'active'
@@ -74,11 +73,11 @@ async def check_expired_subscriptions(bot: Bot):
         # Отправляем уведомления пользователям
         for sub in expired_subscriptions:
             user_id = sub['user_id']
-            file_name = sub['file_name']
+            config_name = sub['name']
             await send_notification(
                 bot,
                 user_id,
-                f"⚠️ Ваша подписка на файл <b>{file_name}</b> истекла.\n"
+                f"⚠️ Ваша подписка на файл <b>{config_name}</b> истекла.\n"
                 "Доступ к файлу отключен."
             )
 

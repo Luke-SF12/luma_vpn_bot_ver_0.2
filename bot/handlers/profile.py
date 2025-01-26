@@ -12,7 +12,7 @@ async def profile_handler(callback: types.CallbackQuery):
     async with db.pool.acquire() as connection:
         # Получаем подписки пользователя без дублирования файлов
         subscriptions = await connection.fetch("""
-            SELECT DISTINCT ON (c.id) s.end_date, c.file_name, p.amount
+            SELECT DISTINCT ON (c.id) s.end_date, c.name, p.amount
             FROM subscriptions s
             LEFT JOIN configs c ON s.config_id = c.id
             LEFT JOIN payments p ON s.user_id = p.user_id AND p.status = 'succeeded'
@@ -35,7 +35,7 @@ async def profile_handler(callback: types.CallbackQuery):
         days_left = (end_date - datetime.now()).days if end_date else None
 
         profile_text += (
-            f"🗂 Файл: {sub['file_name'] or '❌'}\n"
+            f"🔑 Название: {sub['name'] or '❌'}\n"
             f"📅 Окончание: {end_date.strftime('%d.%m.%Y') if end_date else '❌'}\n"
             f"⏳ Осталось дней: {days_left if days_left else '❌'}\n\n"
         )
