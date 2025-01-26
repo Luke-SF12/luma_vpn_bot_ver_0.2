@@ -1,6 +1,5 @@
 from aiogram import Router, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
 from services.yookassa import check_payment
 from database.db import db
 
@@ -22,7 +21,7 @@ async def check_payment_handler(callback: types.CallbackQuery):
         is_paid = await check_payment(payment_id)
 
         if is_paid:
-            await connection.execute("UPDATE payments SET status = 'success' WHERE payment_id = $1", payment_id)
+            await connection.execute("UPDATE payments SET status = 'succeeded' WHERE payment_id = $1", payment_id)
             await callback.message.edit_text(
                 "✅ Оплата прошла успешно!\n\nВыберите дальнейшие действия:",
                 reply_markup=InlineKeyboardMarkup(

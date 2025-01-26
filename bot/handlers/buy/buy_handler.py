@@ -19,6 +19,16 @@ def subscription_keyboard():
 
 @router.callback_query(lambda c: c.data == "buy")
 async def show_subscriptions(callback: types.CallbackQuery):
+    async with db.pool.acquire() as conn:
+        # Проверяем наличие свободных файлов
+        available_configs = await conn.fetchval("""
+            SELECT COUNT(*) FROM configs WHERE is_available = TRUE
+        """)
+
+        if not available_configs:
+            await callback.answer("❌ Свободных файлов нет. Обратитесь к администратору.", show_alert=True)
+            return
+
     await callback.message.edit_text("Выберите тариф для покупки:", reply_markup=subscription_keyboard())
     await callback.answer()
 

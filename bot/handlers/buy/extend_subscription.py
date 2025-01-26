@@ -12,13 +12,14 @@ async def extend_subscription_handler(callback: types.CallbackQuery):
 
     async with db.pool.acquire() as conn:
         subscriptions = await conn.fetch("""
-            SELECT id, plan, end_date, 
-                   (SELECT file_name FROM configs WHERE configs.id = subscriptions.config_id) AS file_name
-            FROM subscriptions WHERE user_id = $1 AND status = 'active'
+            SELECT s.id, s.end_date, c.file_name
+            FROM subscriptions s
+            LEFT JOIN configs c ON s.config_id = c.id
+            WHERE s.user_id = $1 AND s.status = 'active'
         """, user_id)
 
         if not subscriptions:
-            await send_error_message(callback, "❌ У вас еще нет активных подписок!")
+            await callback.answer("❌ У вас еще нет активных подписок!", show_alert=True)
             return
 
         if len(subscriptions) > 1:
@@ -31,38 +32,48 @@ async def extend_subscription_handler(callback: types.CallbackQuery):
             await callback.message.edit_text("Выберите подписку для продления:", reply_markup=keyboard)
             return
 
-        sub = subscriptions[0]
-        await renew_subscription(callback, sub["id"])
+        # Если подписка одна, сразу продлеваем её
+        await renew_subscription(callback, subscriptions[0]['id'])
 
 @router.callback_query(lambda c: c.data.startswith("renew_"))
 async def renew_subscription(callback: types.CallbackQuery, subscription_id: int = None):
     """Продлевает подписку пользователя на соответствующий срок"""
-
     if subscription_id is None:
+        # Если subscription_id не передан, извлекаем его из callback.data
         subscription_id = int(callback.data.split("_")[1])  # Парсим ID подписки из callback_data
 
     async with db.pool.acquire() as conn:
-        sub = await conn.fetchrow("SELECT plan, end_date FROM subscriptions WHERE id = $1", subscription_id)
+        # Получаем последний успешный платеж пользователя
+        payment = await conn.fetchrow(
+            "SELECT amount FROM payments WHERE user_id = $1 AND status = 'succeeded' ORDER BY created_at DESC LIMIT 1",
+            callback.from_user.id
+        )
 
-        if not sub:
-            await send_error_message(callback, "❌ Подписка не найдена.")
+        if not payment:
+            await send_error_message(callback, "❌ Оплата не найдена. Обратитесь в поддержку.")
             return
 
-        plan_durations = {"1m": timedelta(days=30), "3m": timedelta(days=90), "6m": timedelta(days=180)}
-        extension_period = plan_durations.get(sub["plan"], timedelta(days=30))  # По умолчанию 1 месяц
+        amount = payment['amount']
+        duration = {129: 1, 369: 3, 699: 6}.get(amount, 1)  # Определяем длительность продления
 
-        end_date = sub["end_date"]
-        if isinstance(end_date, str):
-            end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
+        # Продлеваем подписку
+        await conn.execute("""
+            UPDATE subscriptions 
+            SET end_date = end_date + INTERVAL '1 month' * $1 
+            WHERE id = $2
+        """, duration, subscription_id)
 
-        new_end_date = end_date + extension_period
+        # Получаем новую дату окончания
+        new_end_date = await conn.fetchval("""
+            SELECT end_date FROM subscriptions WHERE id = $1
+        """, subscription_id)
 
-        await conn.execute("UPDATE subscriptions SET end_date = $1 WHERE id = $2", new_end_date, subscription_id)
-
-        await callback.answer(f"✅ Подписка продлена! Новый срок действия до: {new_end_date.strftime('%d.%m.%Y')}", show_alert=True)
+        await callback.answer(
+            f"✅ Подписка продлена! Новый срок действия до: {new_end_date.strftime('%d.%m.%Y')}",
+            show_alert=True
+        )
 
         await callback.message.delete()
-
         await callback.message.answer(
             f"✅ Ваша подписка успешно продлена!\n"
             f"📅 Новый срок действия до: <b>{new_end_date.strftime('%d.%m.%Y')}</b>",
@@ -70,5 +81,6 @@ async def renew_subscription(callback: types.CallbackQuery, subscription_id: int
         )
 
 async def send_error_message(callback: types.CallbackQuery, error_text: str):
+    """Универсальный метод для отправки ошибок"""
     await callback.message.edit_text(f"❌ {error_text}", reply_markup=inline_menu())
     await callback.answer()
