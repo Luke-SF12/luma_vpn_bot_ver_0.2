@@ -6,7 +6,7 @@ class Database:
         self.pool = None
 
     async def connect(self):
-        self.pool = await asyncpg.create_pool(DB_URL, min_size=1, max_size=10)
+        self.pool = await asyncpg.create_pool(DB_URL, min_size=1, max_size=20)
 
     async def close(self):
         await self.pool.close()
@@ -79,11 +79,16 @@ class Database:
 
                 CREATE TABLE IF NOT EXISTS configs (
                 id SERIAL PRIMARY KEY,
-                name TEXT NOT NULL,  -- Название ключа
-                config_key TEXT NOT NULL,  -- Сам ключ
+                name TEXT NOT NULL,
+                config_key TEXT NOT NULL,
                 user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
                 is_available BOOLEAN DEFAULT TRUE
                 );
+                
+                CREATE INDEX IF NOT EXISTS idx_users_tg_id ON users(tg_id);
+                CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
+                CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
+                CREATE INDEX IF NOT EXISTS idx_configs_user_id ON configs(user_id);
             """)
 
 db = Database()

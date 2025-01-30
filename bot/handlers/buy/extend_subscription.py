@@ -25,11 +25,11 @@ async def extend_subscription_handler(callback: types.CallbackQuery):
         if len(subscriptions) > 1:
             keyboard = InlineKeyboardMarkup(
                 inline_keyboard=[
-                    [InlineKeyboardButton(text=sub["file_name"], callback_data=f"renew_{sub['id']}")]
+                    [InlineKeyboardButton(text=sub["name"], callback_data=f"renew_{sub['id']}")]
                     for sub in subscriptions
                 ]
             )
-            await callback.message.edit_text("Выберите подписку для продления:", reply_markup=keyboard)
+            await callback.message.edit_text("<b>Выберите подписку для продления:</b>", reply_markup=keyboard)
             return
 
         # Если подписка одна, сразу продлеваем её
@@ -50,7 +50,7 @@ async def renew_subscription(callback: types.CallbackQuery, subscription_id: int
         )
 
         if not payment:
-            await send_error_message(callback, "❌ Оплата не найдена. Обратитесь в поддержку.")
+            await send_error_message(callback, "Оплата не найдена. Обратитесь в поддержку.")
             return
 
         amount = payment['amount']
@@ -69,14 +69,17 @@ async def renew_subscription(callback: types.CallbackQuery, subscription_id: int
         """, subscription_id)
 
         await callback.answer(
-            f"✅ Подписка продлена! Новый срок действия до: {new_end_date.strftime('%d.%m.%Y')}",
+            f"✅ Подписка продлена!\n"
+            f"Новый срок действия до: {new_end_date.strftime('%d.%m.%Y')}",
             show_alert=True
         )
 
         await callback.message.delete()
         await callback.message.answer(
-            f"✅ Ваша подписка успешно продлена!\n"
-            f"📅 Новый срок действия до: <b>{new_end_date.strftime('%d.%m.%Y')}</b>",
+            f"✅ <b>Ваша подписка успешно продлена!</b>\n\n"
+            f"📅 Новый срок действия до: <b>{new_end_date.strftime('%d.%m.%Y')}</b>\n\n"
+            f"✨Спасибо, что выбираете <b>LumaVPN</b>.\n"
+            f"Ценю каждого пользователя и стремлюсь обеспечить вам стабильный и безопасный доступ в интернет!",
             reply_markup=inline_menu()
         )
 

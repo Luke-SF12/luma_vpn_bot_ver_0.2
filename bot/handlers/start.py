@@ -10,23 +10,31 @@ router = Router()
 async def start_handler(message: types.Message):
     user_name = message.from_user.first_name
     await message.answer(
-        f"{user_name}, приветствую в <b>Luma VPN!</b>🌐\n\n"
-        f"Нажмите \"Меню\" чтобы начать пользоваться сервисом.",
+        f"<b>{user_name}</b>, Добро пожаловать в <b>Luma VPN!</b>🌐\n\n"
+        f"<b>Открывайте интернет без границ!</b>\n"
+        f"С VPN вы сможете обойти блокировки и получить доступ к любимым сервисам:\n"
+        f"<b>✔ Instagram, TikTok, YouTube, Discord</b>\n"
+        f"<b>✔ Facebook, Twitter</b>\n"
+        f"<b>✔ Netflix, Spotify</b>\n\n"
+        f"<b>🔒 Полная анонимность и защита</b>\n"
+        f"Ваши данные остаются в безопасности, а соединение — стабильным и быстрым.\n\n"
+        f"🔹 Нажмите <b>«Меню»</b>, чтобы начать пользоваться LumaVPN!",
+
         reply_markup=reply_menu()
     )
 
 
-@router.message(lambda message: message.text == "📍 Меню")
+@router.message(lambda message: message.text == "Меню")
 async def menu_handler(message: types.Message):
     await message.answer(
-        "📌 Выберите нужный раздел ниже:",
+        "<b>Выберите необходимый раздел ниже:</b>",
         reply_markup=inline_menu()
     )
 
 @router.callback_query(lambda c: c.data == "back_to_menu")
 async def back_to_menu_handler(callback: types.CallbackQuery):
     await callback.message.edit_text(
-        "📌 Выберите нужный раздел ниже:",
+        "<b>Выберите необходимый раздел ниже:</b>",
         reply_markup=inline_menu()
     )
     await callback.answer()

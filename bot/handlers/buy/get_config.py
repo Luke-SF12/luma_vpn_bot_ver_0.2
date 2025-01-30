@@ -17,7 +17,7 @@ async def get_config_handler(callback: types.CallbackQuery):
                 user_id
             )
             if not payment:
-                await send_error_message(callback, "❌ Оплата не найдена!")
+                await send_error_message(callback, "Оплата не найдена!")
                 return
 
             amount = payment['amount']
@@ -32,7 +32,7 @@ async def get_config_handler(callback: types.CallbackQuery):
             """)
 
             if not config:
-                await send_error_message(callback, "❌ Нет свободных ключей!")
+                await callback.answer("❌ Нет свободных ключей!", show_alert=True)
                 return
 
             # Обновляем конфиг и создаем подписку
@@ -54,15 +54,16 @@ async def get_config_handler(callback: types.CallbackQuery):
 
             # Отправляем ключ
             await callback.message.answer(
-                f"✅ Ваш ключ готов!\n\n"
-                f"🔑 Название: {config['name']}\n"
-                f"Ключ: <code>{config['config_key']}</code>\n\n"
-                f"Используйте его для настройки VPN."
+                f"✅ <b>Ваш VPN-ключ успешно создан!</b>\n\n"
+                f"<b>- Название:</b> {config['name']}\n"
+                f"<b>- Ключ:</b> <code>{config['config_key']}</code>\n\n"
+                f"Спасибо, что вы выбрали LumaVPN. Ваша безопасность и свобода — приоритет.\n\n"
+                f"<b>Скопируйте этот ключ и используйте его для настройки VPN.</b>"
             )
 
             # Отправляем главное меню
             await callback.message.answer(
-                "📌 Выберите нужный раздел:",
+                "<b>Выберите необходимый раздел ниже:</b>",
                 reply_markup=inline_menu()
             )
 

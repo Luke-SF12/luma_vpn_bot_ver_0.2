@@ -29,16 +29,17 @@ async def profile_handler(callback: types.CallbackQuery):
         )
         return
 
-    profile_text = "📌 Ваши подписки:\n\n"
+    profile_text = ("👤 <b>Профиль</b>\n\n"
+                    "<b>Подписки:</b>\n")
     for sub in subscriptions:
         end_date = sub['end_date']
         days_left = (end_date - datetime.now()).days if end_date else None
 
         profile_text += (
-            f"🔑 Название: {sub['name'] or '❌'}\n"
-            f"📅 Окончание: {end_date.strftime('%d.%m.%Y') if end_date else '❌'}\n"
-            f"⏳ Осталось дней: {days_left if days_left else '❌'}\n\n"
-        )
+        f"🔑 <b>Название:</b> {sub['name'] or '❌'}\n"
+        f"📅 <b>Действует до:</b> {end_date.strftime('%d.%m.%Y') if end_date else '❌'}\n"
+        f"⏳ <b>Осталось дней:</b> {days_left if days_left else '❌'}\n\n"
+    )
 
     await callback.message.edit_text(
         profile_text,
