@@ -14,14 +14,14 @@ async def start_notification_scheduler(bot: Bot):
     # Проверка подписок, которые заканчиваются завтра, каждый день в 19:00
     scheduler.add_job(
         check_expiring_subscriptions,
-        CronTrigger(hour=19, minute=00),  # Каждый день в 19:00
+        CronTrigger(hour=19, minute=40),  # Каждый день в 19:00
         args=(bot,)
     )
 
-    # Проверка истекших подписок каждый день в 00:00
+    # Проверка истекших подписок каждый день в 20:00
     scheduler.add_job(
         check_expired_subscriptions,
-        CronTrigger(hour=20, minute=0),  # Каждый день в 20:00
+        CronTrigger(hour=19, minute=45),  # Каждый день в 20:00
         args=(bot,)
     )
 

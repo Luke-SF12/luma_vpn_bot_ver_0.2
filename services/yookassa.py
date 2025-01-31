@@ -7,7 +7,7 @@ from config.config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
 Configuration.account_id = YOOKASSA_SHOP_ID
 Configuration.secret_key = YOOKASSA_SECRET_KEY
 
-async def create_payment(amount: int, user_id: int) -> tuple:
+async def create_payment(amount: int, user_id: int, user_email: str) -> tuple:
     """Создает платеж в YooKassa и возвращает ID платежа и ссылку"""
     payment = Payment.create({
         "amount": {
@@ -22,7 +22,7 @@ async def create_payment(amount: int, user_id: int) -> tuple:
         "description": f"Оплата подписки {user_id}",
         "receipt": {
             "customer": {
-                "email": "user@example.com"  # Замените на email пользователя, если есть
+                "email": user_email  # Замените на email пользователя, если есть
             },
             "items": [
                 {

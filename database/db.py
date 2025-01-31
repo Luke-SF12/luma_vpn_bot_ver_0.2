@@ -56,6 +56,7 @@ class Database:
                     id SERIAL PRIMARY KEY,
                     tg_id BIGINT UNIQUE NOT NULL,
                     username TEXT,
+                    email TEXT,
                     registration_date TIMESTAMP DEFAULT NOW()
                 );
 
