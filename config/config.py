@@ -1,14 +1,12 @@
-import os
+BOT_TOKEN = "7069430105:AAHDyBT3NEvQQeKCDve38WLZnA5xrnevJf0"
+DB_URL = "postgresql://bot_admin:737999@localhost/luma_vpn_bot"
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+YOOKASSA_SHOP_ID = "1022594"
+YOOKASSA_SECRET_KEY = "test_zbFKq_YBl6pabRlOMEs5nKsB9TPfkrBojfICZoAuko8"
 
-DB_USER = os.getenv("POSTGRES_USER", "default_user")
-DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "default_password")
-DB_NAME = os.getenv("POSTGRES_DB", "default_db")
-DB_HOST = os.getenv("POSTGRES_HOST", "db")
-DB_PORT = os.getenv("POSTGRES_PORT", "5432")
+# YOOKASSA_SHOP_ID = "1021486"
+# YOOKASSA_SECRET_KEY = "live_o5Hno_jfU2uy6VUY9CW6qLWFvkoOeBNimVLwHDGWUIw"
 
-DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
-YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
+
+ADMINS = [6964184585]
