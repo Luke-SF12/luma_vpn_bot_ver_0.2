@@ -86,6 +86,7 @@ class Database:
                 payment_id TEXT UNIQUE NOT NULL,
                 amount INTEGER NOT NULL,
                 status TEXT DEFAULT 'pending',
+                payment_link TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
 );
 
