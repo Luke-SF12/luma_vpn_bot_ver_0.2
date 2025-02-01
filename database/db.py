@@ -52,40 +52,44 @@ class Database:
     async def create_tables(self):
         async with self.pool.acquire() as conn:
             await conn.execute("""
+                -- Сначала создаём базовую таблицу пользователей
                 CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    tg_id BIGINT UNIQUE NOT NULL,
-                    username TEXT,
-                    email TEXT,
-                    registration_date TIMESTAMP DEFAULT NOW()
-                );
+                id SERIAL PRIMARY KEY,
+                tg_id BIGINT UNIQUE NOT NULL,
+                username TEXT,
+                email TEXT,
+                registration_date TIMESTAMP DEFAULT NOW()
+            );
 
-                CREATE TABLE IF NOT EXISTS subscriptions (
-                    id SERIAL PRIMARY KEY,
-                    user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
-                    start_date TIMESTAMP DEFAULT NOW(),
-                    end_date TIMESTAMP,
-                    status TEXT DEFAULT 'active',
-                    config_id INTEGER REFERENCES configs(id) ON DELETE SET NULL
-                );
-
-                CREATE TABLE IF NOT EXISTS payments (
-                    id SERIAL PRIMARY KEY,
-                    user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
-                    payment_id TEXT UNIQUE NOT NULL,
-                    amount INTEGER NOT NULL,
-                    status TEXT DEFAULT 'pending',
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
+                -- Затем создаём таблицу с конфигурациями, так как на неё ссылается таблица subscriptions
                 CREATE TABLE IF NOT EXISTS configs (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 config_key TEXT NOT NULL,
                 user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
                 is_available BOOLEAN DEFAULT TRUE
-                );
-                
+            );
+
+                -- Теперь можно создавать таблицы, которые ссылаются на таблицы выше
+                CREATE TABLE IF NOT EXISTS subscriptions (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
+                start_date TIMESTAMP DEFAULT NOW(),
+                end_date TIMESTAMP,
+                status TEXT DEFAULT 'active',
+                config_id INTEGER REFERENCES configs(id) ON DELETE SET NULL
+);
+
+                CREATE TABLE IF NOT EXISTS payments (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT REFERENCES users(tg_id) ON DELETE CASCADE,
+                payment_id TEXT UNIQUE NOT NULL,
+                amount INTEGER NOT NULL,
+                status TEXT DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT NOW()
+);
+
+                -- Затем создаём необходимые индексы
                 CREATE INDEX IF NOT EXISTS idx_users_tg_id ON users(tg_id);
                 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
                 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
