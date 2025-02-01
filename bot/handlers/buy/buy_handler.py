@@ -141,7 +141,7 @@ async def process_email(message: types.Message, state: FSMContext):
     # Подтверждение сохранения email (удалится через 2 секунды)
     confirmation_message = await message.answer(f"✅ Ваш email <b>{user_email}</b> успешно сохранен!", parse_mode="HTML")
 
-    await asyncio.sleep(2)  # Даем пользователю увидеть сообщение
+    await asyncio.sleep(5)  # Даем пользователю увидеть сообщение
     try:
         await confirmation_message.delete()
     except Exception:
