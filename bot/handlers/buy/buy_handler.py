@@ -64,6 +64,12 @@ async def buy_handler(callback: types.CallbackQuery, state: FSMContext):
         if user and user.get("email"):
             # Если email есть, сразу создаем платеж
             payment_id, payment_link = await create_payment(amount, user_id, user["email"])
+
+            await connection.execute(
+                "INSERT INTO payments (user_id, payment_id, amount, status, payment_link) VALUES ($1, $2, $3, $4, $5)",
+                user_id, payment_id, amount, "pending", payment_link
+            )
+
             await process_payment(callback, payment_id, payment_link, amount)
         else:
             # Если email отсутствует, запрашиваем его и сохраняем message_id
@@ -141,7 +147,7 @@ async def process_email(message: types.Message, state: FSMContext):
     # Подтверждение сохранения email (удалится через 2 секунды)
     confirmation_message = await message.answer(f"✅ Ваш email <b>{user_email}</b> успешно сохранен!", parse_mode="HTML")
 
-    await asyncio.sleep(5)  # Даем пользователю увидеть сообщение
+    await asyncio.sleep(3.5)  # Даем пользователю увидеть сообщение
     try:
         await confirmation_message.delete()
     except Exception:
