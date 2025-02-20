@@ -8,8 +8,6 @@ router = Router()
 
 @router.callback_query(lambda c: c.data == "extend_subscription")
 async def extend_subscription_handler(callback: types.CallbackQuery):
-    # Удаляем сообщение с кнопками
-    await callback.message.delete()
 
     user_id = callback.from_user.id
 
@@ -35,7 +33,6 @@ async def extend_subscription_handler(callback: types.CallbackQuery):
             await callback.message.answer("<b>Выберите подписку для продления:</b>", reply_markup=keyboard)
             return
 
-        # Если подписка одна, сразу продлеваем её
         await renew_subscription(callback, subscriptions[0]['id'])
 
 @router.callback_query(lambda c: c.data.startswith("renew_"))
@@ -71,13 +68,16 @@ async def renew_subscription(callback: types.CallbackQuery, subscription_id: int
             SELECT end_date FROM subscriptions WHERE id = $1
         """, subscription_id)
 
+        await callback.message.delete()
+
         await callback.answer(
             f"✅ Подписка продлена!\n"
             f"Новый срок действия до: {new_end_date.strftime('%d.%m.%Y')}",
             show_alert=True
         )
 
-        await callback.message.delete()
+        #await callback.message.delete()
+
         await callback.message.answer(
             f"✅ <b>Ваша подписка успешно продлена!</b>\n\n"
             f"📅 Новый срок действия до: <b>{new_end_date.strftime('%d.%m.%Y')}</b>\n\n"
