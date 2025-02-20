@@ -8,6 +8,9 @@ router = Router()
 
 @router.callback_query(lambda c: c.data == "extend_subscription")
 async def extend_subscription_handler(callback: types.CallbackQuery):
+    # Удаляем сообщение с кнопками
+    await callback.message.delete()
+
     user_id = callback.from_user.id
 
     async with db.pool.acquire() as conn:
@@ -29,7 +32,7 @@ async def extend_subscription_handler(callback: types.CallbackQuery):
                     for sub in subscriptions
                 ]
             )
-            await callback.message.edit_text("<b>Выберите подписку для продления:</b>", reply_markup=keyboard)
+            await callback.message.answer("<b>Выберите подписку для продления:</b>", reply_markup=keyboard)
             return
 
         # Если подписка одна, сразу продлеваем её
