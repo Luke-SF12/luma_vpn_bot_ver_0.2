@@ -54,7 +54,7 @@ async def renew_subscription(callback: types.CallbackQuery, subscription_id: int
             return
 
         amount = payment['amount']
-        duration = {129: 1, 369: 3, 699: 6}.get(amount, 1)  # Определяем длительность продления
+        duration = {89: 1, 249: 3, 479: 6}.get(amount, 1)  # Определяем длительность продления
 
         # Продлеваем подписку
         await conn.execute("""

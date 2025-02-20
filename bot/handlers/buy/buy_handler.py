@@ -15,9 +15,9 @@ router = Router()
 def subscription_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="1 месяц – 129₽", callback_data="buy_1m")],
-            [InlineKeyboardButton(text="3 месяца – 369₽ (5%)", callback_data="buy_3m")],
-            [InlineKeyboardButton(text="6 месяцев – 699₽ (10%)", callback_data="buy_6m")],
+            [InlineKeyboardButton(text="1 месяц – 89₽", callback_data="buy_1m")],
+            [InlineKeyboardButton(text="3 месяца – 249₽ (5%)", callback_data="buy_3m")],
+            [InlineKeyboardButton(text="6 месяцев – 479₽ (10%)", callback_data="buy_6m")],
             [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_menu")],
         ]
     )
@@ -52,8 +52,8 @@ async def buy_handler(callback: types.CallbackQuery, state: FSMContext):
     username = callback.from_user.username or "unknown"
     plan = callback.data.split("_")[1]
 
-    prices = {"1m": 129, "3m": 369, "6m": 699}
-    amount = prices.get(plan, 129)
+    prices = {"1m": 89, "3m": 249, "6m": 479}
+    amount = prices.get(plan, 89)
 
     # Сохраняем данные о платеже в состоянии
     await state.update_data(amount=amount, plan=plan)

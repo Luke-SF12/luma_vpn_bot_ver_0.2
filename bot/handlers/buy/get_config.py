@@ -21,7 +21,7 @@ async def get_config_handler(callback: types.CallbackQuery):
                 return
 
             amount = payment['amount']
-            duration = {129: 1, 369: 3, 699: 6}.get(amount, 1)
+            duration = {89: 1, 249: 3, 479: 6}.get(amount, 1)
 
             # Блокируем первый доступный конфиг
             config = await conn.fetchrow("""
