@@ -10,6 +10,11 @@ async def profile_handler(callback: types.CallbackQuery):
     user_id = callback.from_user.id
 
     async with db.pool.acquire() as connection:
+
+        user_email = await connection.fetchval("""
+                    SELECT email FROM users WHERE tg_id = $1
+                """, user_id)
+
         # Получаем подписки пользователя без дублирования файлов
         subscriptions = await connection.fetch("""
             SELECT DISTINCT ON (c.id) s.end_date, c.name, p.amount
@@ -29,7 +34,8 @@ async def profile_handler(callback: types.CallbackQuery):
         )
         return
 
-    profile_text = ("👤 <b>Профиль</b>\n\n"
+    profile_text = ("👤 <b>Профиль</b>\n"
+                    f"📧 <b>Почта:</b> {user_email or '❌ Не указана'}\n\n"
                     "<b>Подписки:</b>\n")
     for sub in subscriptions:
         end_date = sub['end_date']
