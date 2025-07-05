@@ -8,6 +8,12 @@ from services.yookassa import create_payment
 from database.db import db
 from logger import sync_logger, async_logger
 from bot.states.user import UserStates  # Импортируем состояние для email
+from datetime import datetime, timedelta
+from aiogram import Router, types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from services.yookassa import check_payment
+from database.db import db
+from bot.keyboards.inline import inline_menu
 
 router = Router()
 
@@ -24,6 +30,17 @@ def subscription_keyboard():
 
 @router.callback_query(lambda c: c.data == "buy")
 async def show_subscriptions(callback: types.CallbackQuery):
+    if datetime.now() - callback.message.date.replace(tzinfo=None) > timedelta(hours=24):
+        await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
+        try:
+            await callback.message.delete()
+        except:
+            pass
+        await callback.message.answer(
+            "<b>Выберите необходимый раздел ниже:</b>",
+            reply_markup=inline_menu()
+        )
+        return
     user_id = callback.from_user.id
     sync_logger.info(f"Пользователь {user_id} начал процесс покупки.")
     async with db.pool.acquire() as conn:
@@ -48,6 +65,17 @@ async def show_subscriptions(callback: types.CallbackQuery):
 
 @router.callback_query(lambda c: c.data.startswith("buy_"))
 async def buy_handler(callback: types.CallbackQuery, state: FSMContext):
+    if datetime.now() - callback.message.date.replace(tzinfo=None) > timedelta(hours=24):
+        await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
+        try:
+            await callback.message.delete()
+        except:
+            pass
+        await callback.message.answer(
+            "<b>Выберите необходимый раздел ниже:</b>",
+            reply_markup=inline_menu()
+        )
+        return
     user_id = callback.from_user.id
     username = callback.from_user.username or "unknown"
     plan = callback.data.split("_")[1]
