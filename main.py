@@ -17,7 +17,7 @@ dp = Dispatcher()
 async def main():
     try:
         await db.connect()
-        sync_logger.info("Подключение к базе данных успешно.")
+        sync_logger.info("Подключение к базе данных успешноd.")
 
         await db.create_tables()
         sync_logger.info("Таблицы успешно созданы.")
