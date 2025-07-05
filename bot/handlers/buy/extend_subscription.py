@@ -3,11 +3,25 @@ from aiogram import Router, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot.keyboards.inline import inline_menu
 from database.db import db
+from datetime import datetime, timedelta
+from aiogram import Router, types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from services.yookassa import check_payment
+from database.db import db
+from bot.keyboards.inline import inline_menu
 
 router = Router()
 
 @router.callback_query(lambda c: c.data == "extend_subscription")
 async def extend_subscription_handler(callback: types.CallbackQuery):
+    if datetime.now() - callback.message.date > timedelta(hours=24):
+        await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
+        await callback.message.delete()
+        await callback.message.answer(
+            "<b>Выберите необходимый раздел ниже:</b>",
+            reply_markup=inline_menu()
+        )
+        return
 
     user_id = callback.from_user.id
 
@@ -54,7 +68,7 @@ async def renew_subscription(callback: types.CallbackQuery, subscription_id: int
             return
 
         amount = payment['amount']
-        duration = {89: 1, 249: 3, 479: 6}.get(amount, 1)  # Определяем длительность продления
+        duration = {100: 1, 285: 3, 540: 6}.get(amount, 1)  # Определяем длительность продления
 
         # Продлеваем подписку
         await conn.execute("""

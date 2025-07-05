@@ -15,9 +15,9 @@ def inline_menu():
 def subscription_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="1 месяц – 89₽", callback_data="buy_1m")],
-            [InlineKeyboardButton(text="3 месяца – 249₽ (5%)", callback_data="buy_3m")],
-            [InlineKeyboardButton(text="6 месяцев – 479₽ (10%)", callback_data="buy_6m")],
+            [InlineKeyboardButton(text="1 месяц – 100₽", callback_data="buy_1m")],
+            [InlineKeyboardButton(text="3 месяца – 285₽ (5%)", callback_data="buy_3m")],
+            [InlineKeyboardButton(text="6 месяцев – 540₽ (10%)", callback_data="buy_6m")],
             [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_menu")],
         ]
     )

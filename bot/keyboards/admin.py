@@ -9,7 +9,16 @@ def admin_menu():
             [InlineKeyboardButton(text="📁 Экспорт XLSX", callback_data="export_xlsx")],
             [InlineKeyboardButton(text="📊 Статистика", callback_data="stats")],
             [InlineKeyboardButton(text="👨💻 Добавить админа", callback_data="add_admin")],
-            [InlineKeyboardButton(text="👥 Список администраторов", callback_data="view_admins")]
+            [InlineKeyboardButton(text="👥 Список администраторов", callback_data="view_admins")],
+            [InlineKeyboardButton(text="📢 Сделать рассылку", callback_data="broadcast")]
+        ]
+    )
+
+def confirm_broadcast_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Да, отправить всем", callback_data="confirm_broadcast")],
+            [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_broadcast")]
         ]
     )
 

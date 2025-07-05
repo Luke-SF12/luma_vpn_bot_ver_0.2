@@ -5,3 +5,7 @@ class AddKeyState(StatesGroup):
 
 class AddAdminState(StatesGroup):
     waiting_for_admin_id = State()  # Состояние ожидания ввода Telegram ID администратора
+
+class BroadcastState(StatesGroup):
+    waiting_for_broadcast_message = State()
+    confirmation = State()

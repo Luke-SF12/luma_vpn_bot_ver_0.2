@@ -9,6 +9,14 @@ from bot.states.admin import AddKeyState, AddAdminState
 from aiogram.types import BufferedInputFile
 from services.excel_export import generate_xlsx
 
+from aiogram.filters import Command
+from aiogram.types import Message, CallbackQuery
+from aiogram import F, Bot
+from datetime import datetime
+import asyncio
+from bot.states.admin import BroadcastState
+from bot.keyboards.admin import admin_menu, confirm_broadcast_keyboard
+
 router = Router()
 
 
@@ -215,5 +223,95 @@ async def view_admins_handler(callback: CallbackQuery):
 async def admin_back_handler(callback: CallbackQuery):
     await callback.message.edit_text(  # Редактируем сообщение
         "👑 Админ-панель",
+        reply_markup=admin_menu()
+    )
+
+
+@router.callback_query(F.data == "broadcast")
+async def start_broadcast(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        "📢 Введите сообщение для рассылки всем пользователям:",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="🔙 Отмена", callback_data="admin_back")]]
+        )
+    )
+    await state.set_state(BroadcastState.waiting_for_broadcast_message)
+
+
+@router.message(BroadcastState.waiting_for_broadcast_message)
+async def process_broadcast_message(message: Message, state: FSMContext):
+    await state.update_data(broadcast_message=message.html_text)
+    await message.answer(
+        f"📢 Вы собираетесь отправить это сообщение всем пользователям:\n\n"
+        f"{message.html_text}\n\n"
+        f"Подтвердите отправку:",
+        reply_markup=confirm_broadcast_keyboard(),
+        parse_mode="HTML"
+    )
+    await state.set_state(BroadcastState.confirmation)
+
+
+@router.callback_query(BroadcastState.confirmation, F.data == "confirm_broadcast")
+async def confirm_broadcast(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    broadcast_message = data.get("broadcast_message", "")
+
+    if not broadcast_message:
+        await callback.answer("❌ Ошибка: сообщение не найдено")
+        return
+
+    await callback.message.edit_text("⏳ Начинаю рассылку...")
+
+    # Получаем всех пользователей
+    async with db.pool.acquire() as conn:
+        users = await conn.fetch("SELECT tg_id FROM users")
+
+    total = len(users)
+    success = 0
+    failed = 0
+
+    # Отправляем сообщения с интервалом, чтобы не превысить лимиты Telegram
+    for i, user in enumerate(users, 1):
+        try:
+            await bot.send_message(
+                chat_id=user['tg_id'],
+                text=broadcast_message,
+                parse_mode="HTML"
+            )
+            success += 1
+        except Exception as e:
+            failed += 1
+
+        # Обновляем статус каждые 10 сообщений
+        if i % 10 == 0 or i == total:
+            try:
+                await callback.message.edit_text(
+                    f"📢 Рассылка в процессе...\n"
+                    f"✅ Успешно: {success}\n"
+                    f"❌ Ошибок: {failed}\n"
+                    f"📊 Всего: {total}"
+                )
+            except:
+                pass
+
+        # Задержка между сообщениями (0.1 секунды)
+        await asyncio.sleep(0.1)
+
+    # Финальный отчет
+    await callback.message.answer(
+        f"📢 Рассылка завершена!\n"
+        f"✅ Успешно отправлено: {success}\n"
+        f"❌ Не удалось отправить: {failed}\n"
+        f"📊 Всего пользователей: {total}",
+        reply_markup=admin_menu()
+    )
+    await state.clear()
+
+
+@router.callback_query(BroadcastState.confirmation, F.data == "cancel_broadcast")
+async def cancel_broadcast(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_text(
+        "❌ Рассылка отменена",
         reply_markup=admin_menu()
     )

@@ -2,11 +2,29 @@ from aiogram import Router, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from services.yookassa import check_payment
 from database.db import db
+from datetime import datetime, timedelta
+from aiogram import Router, types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from services.yookassa import check_payment
+from database.db import db
+from bot.keyboards.inline import inline_menu
 
 router = Router()
 
 @router.callback_query(lambda c: c.data.startswith("check_payment_"))
 async def check_payment_handler(callback: types.CallbackQuery):
+    # Проверяем, не старое ли сообщение (больше 24 часов)
+    if datetime.now() - callback.message.date.replace(tzinfo=None) > timedelta(hours=24):
+        await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
+        try:
+            await callback.message.delete()
+        except:
+            pass
+        await callback.message.answer(
+            "<b>Выберите необходимый раздел ниже:</b>",
+            reply_markup=inline_menu()
+        )
+        return
     payment_id = callback.data.split("_")[2]
 
     async with db.pool.acquire() as connection:
