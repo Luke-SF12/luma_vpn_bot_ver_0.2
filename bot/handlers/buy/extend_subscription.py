@@ -9,12 +9,13 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from services.yookassa import check_payment
 from database.db import db
 from bot.keyboards.inline import inline_menu
+from datetime import datetime, timedelta, timezone
 
 router = Router()
 
 @router.callback_query(lambda c: c.data == "extend_subscription")
 async def extend_subscription_handler(callback: types.CallbackQuery):
-    if datetime.now() - callback.message.date > timedelta(hours=24):
+    if datetime.now(timezone.utc) - callback.message.date > timedelta(hours=24):
         await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
         await callback.message.delete()
         await callback.message.answer(

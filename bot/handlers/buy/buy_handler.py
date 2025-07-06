@@ -14,6 +14,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from services.yookassa import check_payment
 from database.db import db
 from bot.keyboards.inline import inline_menu
+from datetime import datetime, timedelta, timezone
 
 router = Router()
 
@@ -30,7 +31,7 @@ def subscription_keyboard():
 
 @router.callback_query(lambda c: c.data == "buy")
 async def show_subscriptions(callback: types.CallbackQuery):
-    if datetime.now() - callback.message.date.replace(tzinfo=None) > timedelta(hours=24):
+    if datetime.now(timezone.utc) - callback.message.date > timedelta(hours=24):
         await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
         try:
             await callback.message.delete()

@@ -8,12 +8,14 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from services.yookassa import check_payment
 from database.db import db
 from bot.keyboards.inline import inline_menu
+from datetime import datetime, timedelta, timezone
 
 router = Router()
 
 @router.callback_query(lambda c: c.data == "get_config")
 async def get_config_handler(callback: types.CallbackQuery):
-    if datetime.now() - callback.message.date > timedelta(hours=24):
+    user_id = callback.from_user.id
+    if datetime.now(timezone.utc) - callback.message.date > timedelta(hours=24):
         await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
         await callback.message.delete()
         await callback.message.answer(
@@ -21,7 +23,6 @@ async def get_config_handler(callback: types.CallbackQuery):
             reply_markup=inline_menu()
         )
         return
-    user_id = callback.from_user.id
 
     async with db.pool.acquire() as conn:
         async with conn.transaction():
