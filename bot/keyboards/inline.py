@@ -6,6 +6,7 @@ def inline_menu():
         inline_keyboard=[
             [InlineKeyboardButton(text="🛒 Купить", callback_data="buy")],
             [InlineKeyboardButton(text="👤 Профиль", callback_data="profile")],
+            [InlineKeyboardButton(text="👥 Пригласить друга", callback_data="referral_system")],
             [InlineKeyboardButton(text="📖 Инструкция", callback_data="instruction")],
             [InlineKeyboardButton(text="💬️ Поддержка", callback_data="support")],
         ]

@@ -8,6 +8,7 @@ from .instruction import router as instruction_router
 from .support import router as support_router
 from .notifications import router as notifications_router
 from .admin import admin_panel  # Импорт админ-панели
+from .referrals import router as referrals_router
 
 def register_handlers(dp: Dispatcher):
     dp.include_router(start_router)
@@ -17,3 +18,4 @@ def register_handlers(dp: Dispatcher):
     dp.include_router(support_router)
     dp.include_router(notifications_router)
     dp.include_router(admin_panel)  # Подключение админ-панели
+    dp.include_router(referrals_router)

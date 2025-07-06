@@ -61,6 +61,27 @@ async def get_config_handler(callback: types.CallbackQuery):
                 VALUES ($1, NOW(), NOW() + INTERVAL '1 month' * $2, $3)
             """, user_id, duration, config["id"])
 
+            payment = await conn.fetchrow(
+                "SELECT id FROM payments WHERE user_id = $1 AND status = 'succeeded' ORDER BY created_at DESC LIMIT 1",
+                user_id
+            )
+            if payment:
+                bonus_applied = await db.apply_referral_bonus(user_id, payment['id'])
+                if bonus_applied:
+                    referrer_id = await conn.fetchval(
+                        "SELECT referrer_id FROM referrals WHERE referred_id = $1",
+                        user_id
+                    )
+                    if referrer_id:
+                        try:
+                            await callback.bot.send_message(
+                                chat_id=referrer_id,
+                                text=f"🎉 Ваш реферал оплатил подписку!\n"
+                                     f"Вам начислено +20 дней к подписке!"
+                            )
+                        except:
+                            pass
+
             # Логирование
             logging.info(f"Ключ {config['name']} выдан пользователю {user_id}.")
 

@@ -15,6 +15,7 @@ router = Router()
 
 @router.callback_query(lambda c: c.data == "extend_subscription")
 async def extend_subscription_handler(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
     if datetime.now(timezone.utc) - callback.message.date > timedelta(hours=24):
         await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
         await callback.message.delete()
@@ -23,8 +24,6 @@ async def extend_subscription_handler(callback: types.CallbackQuery):
             reply_markup=inline_menu()
         )
         return
-
-    user_id = callback.from_user.id
 
     async with db.pool.acquire() as conn:
         subscriptions = await conn.fetch("""

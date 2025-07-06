@@ -2,6 +2,7 @@ from aiogram import Router, types
 from aiogram.filters import Command
 from bot.keyboards.reply import reply_menu
 from bot.keyboards.inline import inline_menu
+from database.db import db
 
 router = Router()
 
@@ -9,6 +10,58 @@ router = Router()
 @router.message(Command("start"))
 async def start_handler(message: types.Message):
     user_name = message.from_user.first_name
+
+    referral_code = None
+    if len(message.text.split()) > 1 and message.text.split()[1].startswith('ref_'):
+        referral_code = message.text.split()[1][4:]  # Извлекаем ID пригласившего
+
+    # 2. Регистрация/обновление пользователя
+    async with db.pool.acquire() as conn:
+        user = await conn.fetchrow(
+            "SELECT * FROM users WHERE tg_id = $1",
+            message.from_user.id
+        )
+
+        if not user:
+            # Новый пользователь
+            await conn.execute(
+                """INSERT INTO users (tg_id, username, referral_code, registration_date)
+                VALUES ($1, $2, $3, NOW())""",
+                message.from_user.id,
+                message.from_user.username,
+                f"ref_{message.from_user.id}"
+            )
+
+            # Если есть реферальный код
+            if referral_code:
+                try:
+                    referrer_id = int(referral_code)
+                    if referrer_id != message.from_user.id:
+                        await db.create_referral(referrer_id, message.from_user.id)
+
+                        # Уведомляем пригласившего
+                        try:
+                            await message.bot.send_message(
+                                chat_id=referrer_id,
+                                text=f"🎉 Новый пользователь по вашей ссылке!\n"
+                                     f"@{message.from_user.username or 'Аноним'} зарегистрировался.\n"
+                                     f"Когда он оплатит подписку - вы получите +20 дней!"
+                            )
+                        except:
+                            pass
+                except ValueError:
+                    pass
+        else:
+            # Существующий пользователь - убедимся есть ли у него referral_code
+            if not user.get('referral_code'):
+                await conn.execute(
+                    "UPDATE users SET referral_code = $1 WHERE tg_id = $2",
+                    f"ref_{message.from_user.id}",
+                    message.from_user.id
+                )
+
+
+
     await message.answer(
         f"<b>{user_name}</b>, Добро пожаловать в <b>Luma VPN!</b>🌐\n\n"
         f"<b>Открывайте интернет без границ!</b>\n"

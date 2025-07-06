@@ -22,6 +22,8 @@ async def main():
         await db.create_tables()
         sync_logger.info("Таблицы успешно созданы.")
 
+        await db.migrate_existing_users()
+
         register_handlers(dp)
         sync_logger.info("Обработчики успешно зарегистрированы.")
 

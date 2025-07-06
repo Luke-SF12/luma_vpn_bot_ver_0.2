@@ -31,6 +31,7 @@ def subscription_keyboard():
 
 @router.callback_query(lambda c: c.data == "buy")
 async def show_subscriptions(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
     if datetime.now(timezone.utc) - callback.message.date > timedelta(hours=24):
         await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
         try:
@@ -42,7 +43,7 @@ async def show_subscriptions(callback: types.CallbackQuery):
             reply_markup=inline_menu()
         )
         return
-    user_id = callback.from_user.id
+
     sync_logger.info(f"Пользователь {user_id} начал процесс покупки.")
     async with db.pool.acquire() as conn:
         # Проверяем наличие активных подписок
