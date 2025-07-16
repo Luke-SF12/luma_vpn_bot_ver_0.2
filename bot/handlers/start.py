@@ -74,7 +74,8 @@ async def start_handler(message: types.Message, state: FSMContext):
             f"— Канал с информацией: <b><a href='https://t.me/+IzUMlniBS700MDU8'>LumaVPN</a></b>\n\n"
             f"Нажмите <b>«Меню🗿»</b>, чтобы начать пользоваться LumaVPN!",
 
-            reply_markup=reply_menu()
+            reply_markup=reply_menu(),
+            disable_web_page_preview = True
         )
 
     except Exception as e:
