@@ -32,7 +32,7 @@ def subscription_keyboard():
 @router.callback_query(lambda c: c.data == "buy")
 async def show_subscriptions(callback: types.CallbackQuery):
     user_id = callback.from_user.id
-    if datetime.now(timezone.utc) - callback.message.date > timedelta(hours=24):
+    if datetime.now(timezone.utc) - callback.message.date > timedelta(hours=1):
         await callback.answer("❌ Это сообщение устарело. Пожалуйста, начните процесс заново.", show_alert=True)
         try:
             await callback.message.delete()
